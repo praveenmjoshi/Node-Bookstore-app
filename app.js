@@ -1,7 +1,8 @@
-const express = require('express')
+const express = require('express');
+
 const app = express()
 
-const books = require('./controllers/books')
+const apiRouter = require('./routers/api')
 
 // static assets
 app.use(express.static('./static'))
@@ -9,9 +10,7 @@ app.use(express.urlencoded({ extended: false }))
 app.use(express.json())
 
 
-app.use('/bookstore',books)
+app.use('/api', apiRouter)
 
 
-app.listen(5000, () => {
-    console.log('Server is listening at port 5000')
-})
+module.exports = app;

@@ -1,26 +1,55 @@
 const books = require('../static/books_data')
+const Book = require('../models/books');
+const mongoose = require('mongoose');
+const apiResponse = require("../utils/apiResponse");
 
-const getAllBooks = (req, res)=> {
-    const {category} = req.query
-    let results;
-    console.log(category)
-    switch(category){
-        case 'recent':
-            results = ([...books].sort((a,b) => (a.year < b.year) ? 1 : ((b.year < a.year) ? -1: 0))).slice(0,20);
-            break;
-        default:
-            results = books
-    }
-    res.status(200).json(results)
+// Book Schema
+const BookSchema = (data) =>{
+    this.author = data.author;
+    this.title = data.title;
+    this.country = data.country;
+    this.language = data.language;
+    this.year = data.year;
+    this.page = data.page;
+    this.imageLink = data.imageLink;
+    this.link = data.link;   
+}
+
+
+/**
+ * Function getAllBooks fetch the books from mongo db and returns to client
+ * @param {*} req 
+ * @param {*} res 
+ * @returns {Object}
+ */
+const getAllBooks = (req, res) =>{
+        try{
+            Book.find({}).then( (data) =>{
+                if(data.length > 0){
+                    return apiResponse.successResponseWithData(res, "Success", data)
+                }else{
+                    return apiResponse.successResponseWithData(res, "Success", [])
+                }
+            })
+        }catch(err){
+            return apiResponse.errorResponse(res, err)
+        }
+
 }
 
 const getBook = (req, res) => {
-    const {id} = req.params
-    book = books.find(item => item.id == id)
-    if(book){
-        res.status(200).json(book)
-    }else{
-        res.status(404).send({message: 'Book Not Found'})
+
+    try{
+        const {id} = req.params
+        Book.find({'id': id}).then((data)=>{
+            if(data.length > 0){
+                return apiResponse.successResponseWithData(res, "Success", data)
+            }else{
+                return apiResponse.successResponseWithData(res, "Success", [])
+            }
+        })
+    }catch(error){
+        return apiResponse.errorResponse(res, err)
     }
 }
 
@@ -37,17 +66,23 @@ const getBook = (req, res) => {
 // }
 
 const searchBooks = (req, res) => {
-    let { query = "" } = req.query
-    query = query.toLowerCase()
+    const queryParams = req.query
+
+    let author = queryParams[`author`] ? queryParams[`author`].toLowerCase() : null;
+    let country = queryParams[`country`] ? queryParams[`country`].toLowerCase() : null;
+    let language  = queryParams[`language`] ? queryParams[`language`].toLowerCase() : null;
+    let title = queryParams[`title`]  ? queryParams[`title`].toLowerCase() : null;
+    let year = queryParams[`year`] || null;
+
     booklist = books.filter( item => {
         return (
-            item.author.toLowerCase().includes(query) || 
-            item.country.toLowerCase().includes(query) || 
-            item.language.toLowerCase().includes(query) || 
-            item.title.toLowerCase().includes(query)
+            item.author.toLowerCase().includes(author) || 
+            item.country.toLowerCase().includes(country) || 
+            item.language.toLowerCase().includes(language) || 
+            item.title.toLowerCase().includes(title) ||
+            item.year === year
         )
     })
-    console.log(query)
     res.status(200).json(booklist)
 }
 
